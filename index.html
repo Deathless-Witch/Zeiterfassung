@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zeiterfassung</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<meta name="theme-color" content="#2f6f5e">
+<style>
+:root{--bg:#f6f5f2;--card:#fff;--tx:#1f2328;--mut:#6b7280;--ln:#e3e0d8;--ac:#2f6f5e;--ac2:#c2410c;--ok:#2f6f5e;--warn:#b45309}
+@media(prefers-color-scheme:dark){:root{--bg:#16181a;--card:#202325;--tx:#e8e6e1;--mut:#9aa0a6;--ln:#33373a;--ac:#6fc3aa;--ac2:#f59e6b;--ok:#6fc3aa;--warn:#f0b35a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,sans-serif}
+main{max-width:640px;margin:0 auto;padding:16px 14px 60px}
+h1{font-size:22px;margin:4px 0 14px}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin:26px 0 8px}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grow{flex:1}
+button{font:inherit;border:1px solid var(--ln);background:var(--card);color:var(--tx);border-radius:10px;padding:10px 14px;cursor:pointer}
+button.pri{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:600}
+@media(prefers-color-scheme:dark){button.pri{color:#10231d}}
+button:disabled{opacity:.5;cursor:default}
+.big{width:100%;padding:16px;font-size:18px}
+input{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:6px 8px;min-width:0}
+input[type=time]{width:104px}
+input[type=number]{width:70px}
+input[type=text],input[type=email]{width:100%}
+label{font-size:13px;color:var(--mut);display:block;margin-bottom:3px}
+.mut{color:var(--mut);font-size:14px}
+.day{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center}
+.dh{font-weight:600}
+.net{font-weight:700;text-align:right}
+.today{border-color:var(--ac);box-shadow:0 0 0 1px var(--ac)}
+.cl{display:grid;grid-template-columns:70px 1fr 1fr;gap:6px;align-items:center;grid-column:1/-1}
+.bar{height:10px;border-radius:6px;background:var(--ln);overflow:hidden;margin:8px 0 4px}
+.bar>i{display:block;height:100%;background:var(--ac)}
+.warn{color:var(--warn)}
+textarea{width:100%;min-height:230px;font:13px/1.45 ui-monospace,monospace;color:var(--tx);background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:8px}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;font-size:15px;max-width:90%;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+a.btn{display:inline-block;text-decoration:none;border:1px solid var(--ln);border-radius:10px;padding:10px 14px;color:var(--tx)}
+</style>
+</head>
+<body>
+<main>
+<h1>Zeiterfassung</h1>
+
+<h2>Stempeln</h2>
+<div id="stamp"></div>
+
+<h2>Woche</h2>
+<div class="row" style="margin-bottom:8px">
+  <button id="prev">←</button>
+  <div class="grow" id="weekLabel" style="text-align:center;font-weight:600"></div>
+  <button id="next">→</button>
+</div>
+<div class="card">
+  <div class="row"><div class="grow" id="sumTxt"></div><div id="restTxt" class="mut"></div></div>
+  <div class="bar"><i id="barFill" style="width:0"></i></div>
+</div>
+<div id="days"></div>
+
+<h2>Wochenmeldung</h2>
+<div class="card">
+  <div class="mut" style="margin-bottom:8px">Fertiger Text für die angezeigte Woche. Du kannst ihn direkt bearbeiten; Kopieren und Mail-Link nehmen deinen Text.</div>
+  <textarea id="mailTxt"></textarea>
+  <div class="row" style="margin-top:8px">
+    <button class="pri" id="copyBtn">Text kopieren</button>
+    <button id="regenBtn">Neu generieren</button>
+    <a class="btn" id="mailLink" href="#">In Mail-App öffnen</a>
+  </div>
+  <div class="mut" id="mailHint" style="margin-top:8px"></div>
+</div>
+
+<h2>Sicherung</h2>
+<div class="card">
+  <div class="mut" style="margin-bottom:8px">Alle Zeiten und Einstellungen liegen nur in diesem Browser. Zieh dir ab und zu eine Sicherung.</div>
+  <div class="row">
+    <button class="pri" id="expBtn">Sicherung speichern</button>
+    <button id="impBtn">Sicherung laden</button>
+    <input type="file" id="impFile" accept=".json,application/json" style="display:none">
+  </div>
+  <div class="mut" id="bakHint" style="margin-top:8px"></div>
+</div>
+
+<h2>Einstellungen</h2>
+<div class="card">
+  <div class="row">
+    <div class="grow"><label>Klient 1</label><input type="text" id="sNameA"></div>
+    <div class="grow"><label>Klient 2</label><input type="text" id="sNameB"></div>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <div class="grow"><label>E-Mail der Vorgesetzten</label><input type="email" id="sMail"></div>
+  </div>
+  <div class="row" style="margin-top:10px">
+    <div><label>Pause (Min.)</label><input type="number" id="sPause" min="0" step="5"></div>
+    <div><label>Max. Std./Woche</label><input type="number" id="sMax" min="0" step="0.5"></div>
+  </div>
+  <div style="margin-top:10px"><label>Mailvorlage ({ZEITEN} = hier kommen die Zeiten rein, {KW} = Kalenderwoche)</label><textarea id="sTpl" style="min-height:190px"></textarea>
+    <button id="tplReset" style="margin-top:6px">Vorlage zurücksetzen</button></div>
+  <div class="mut" style="margin-top:10px">NFC-Sticker beschreiben mit: Adresse dieser Seite + <b>?stempel=1</b> (Klient 1) bzw. <b>?stempel=2</b> (Klient 2).</div>
+</div>
+</main>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+var KEY='zeiterfassung-v1';
+var DEFAULT_TPL='Hallo,\n\nanbei meine Arbeitszeiten dieser Woche:\n\n{ZEITEN}\n\nMit freundlichen Grüßen';
+var store={settings:{nameA:'Klient 1',nameB:'Klient 2',mail:'',tpl:DEFAULT_TPL,pause:30,max:35},days:{},last:{}};
+var mem=null;
+function load(){try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);store.settings=Object.assign(store.settings,o.settings||{});store.days=o.days||{};store.last=o.last||{};store.lastBackup=o.lastBackup||0;return}}catch(e){}
+  if(mem){store=mem}}
+function save(){mem=store;try{localStorage.setItem(KEY,JSON.stringify(store))}catch(e){}}
+load();
+
+var weekOffset=0;
+var WD=['So','Mo','Di','Mi','Do','Fr','Sa'];
+function p2(n){return (n<10?'0':'')+n}
+function iso(d){return d.getFullYear()+'-'+p2(d.getMonth()+1)+'-'+p2(d.getDate())}
+function nowHM(){var d=new Date();return p2(d.getHours())+':'+p2(d.getMinutes())}
+function toMin(s){if(!s)return null;var a=s.split(':');return +a[0]*60+ +a[1]}
+function hm(m){m=Math.round(m);var neg=m<0;m=Math.abs(m);return (neg?'-':'')+Math.floor(m/60)+':'+p2(m%60)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function mondayOf(d){var x=new Date(d.getFullYear(),d.getMonth(),d.getDate());var wd=(x.getDay()+6)%7;x.setDate(x.getDate()-wd);return x}
+function isoWeek(d){var t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));var n=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-n);var y0=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y0)/86400000+1)/7)}
+function ddmm(d){return p2(d.getDate())+'.'+p2(d.getMonth()+1)+'.'}
+function weekDates(){var m=mondayOf(new Date());m.setDate(m.getDate()+weekOffset*7);var r=[];for(var i=0;i<5;i++){var x=new Date(m);x.setDate(m.getDate()+i);r.push(x)}return r}
+
+// Tag berechnen: Tag beginnt beim frühesten Start, endet beim spätesten Ende, dazwischen laufen beide parallel.
+function calc(day){
+  if(!day)return null;
+  var st=[],en=[];
+  ['a','b'].forEach(function(c){var x=day[c];if(x){if(toMin(x.start)!=null)st.push(toMin(x.start));if(toMin(x.end)!=null)en.push(toMin(x.end))}});
+  if(!st.length||!en.length)return null;
+  var s=Math.min.apply(null,st),e=Math.max.apply(null,en);
+  if(e<=s)return null;
+  var pause=(day.pause!=null&&day.pause!=='')?+day.pause:store.settings.pause;
+  return {s:s,e:e,pause:pause,net:Math.max(0,e-s-pause)};
+}
+
+function toast(t){var el=document.getElementById('toast');el.textContent=t;el.className='toast on';clearTimeout(toast.t);toast.t=setTimeout(function(){el.className='toast'},2600)}
+
+function getDay(k){if(!store.days[k])store.days[k]={};return store.days[k]}
+
+function stamp(c,fromNfc){
+  var now=Date.now();
+  if(fromNfc&&store.last[c]&&now-store.last[c]<60000){toast('Gerade erst gestempelt – ignoriert.');return}
+  var k=iso(new Date()),d=getDay(k);
+  if(!d[c])d[c]={};
+  var name=c==='a'?store.settings.nameA:store.settings.nameB;
+  if(!d[c].start){d[c].start=nowHM();toast(name+': Kommt '+d[c].start)}
+  else if(!d[c].end){d[c].end=nowHM();toast(name+': Geht '+d[c].end)}
+  else{toast(name+' ist für heute schon abgeschlossen. Zeiten unten änderbar.');return}
+  store.last[c]=now;save();render();
+}
+
+function renderStamp(){
+  var k=iso(new Date()),d=store.days[k]||{},h='';
+  [['a',store.settings.nameA],['b',store.settings.nameB]].forEach(function(x){
+    var c=x[0],t=d[c]||{},lab,st;
+    if(!t.start){lab='Kommt';st='noch nicht gestartet'}
+    else if(!t.end){lab='Geht';st='läuft seit '+t.start}
+    else{lab='erledigt';st=t.start+' – '+t.end}
+    h+='<div class="card"><div class="row"><div class="grow"><b>'+esc(x[1])+'</b><div class="mut">'+st+'</div></div>'+
+       '<button class="pri" data-c="'+c+'" '+(t.end?'disabled':'')+' style="min-width:120px;padding:14px">'+lab+'</button></div></div>';
+  });
+  var cl=calc(d);
+  if(cl)h+='<div class="mut">Heute bisher: '+hm(cl.s)+'–'+hm(cl.e)+', netto '+hm(cl.net)+' h</div>';
+  document.getElementById('stamp').innerHTML=h;
+  document.querySelectorAll('#stamp button[data-c]').forEach(function(b){b.onclick=function(){stamp(b.getAttribute('data-c'),false)}});
+}
+
+function renderWeek(){
+  var ds=weekDates(),todayK=iso(new Date()),tot=0,h='';
+  document.getElementById('weekLabel').textContent='KW '+isoWeek(ds[0])+' · '+ddmm(ds[0])+'–'+ddmm(ds[4])+ds[4].getFullYear();
+  ds.forEach(function(dt){
+    var k=iso(dt),d=store.days[k]||{},cl=calc(d);if(cl)tot+=cl.net;
+    var a=d.a||{},b=d.b||{};
+    h+='<div class="card day'+(k===todayK?' today':'')+'" data-k="'+k+'">'+
+      '<div class="dh">'+WD[dt.getDay()]+' '+ddmm(dt)+'</div><div class="net">'+(cl?hm(cl.net)+' h':'–')+'</div>'+
+      '<div class="cl"><span class="mut">'+esc(store.settings.nameA)+'</span><input type="time" data-f="a.start" value="'+(a.start||'')+'"><input type="time" data-f="a.end" value="'+(a.end||'')+'"></div>'+
+      '<div class="cl"><span class="mut">'+esc(store.settings.nameB)+'</span><input type="time" data-f="b.start" value="'+(b.start||'')+'"><input type="time" data-f="b.end" value="'+(b.end||'')+'"></div>'+
+      '<div class="cl"><span class="mut">Pause</span><input type="number" min="0" step="5" data-f="pause" value="'+((d.pause!=null&&d.pause!=='')?d.pause:'')+'" placeholder="'+store.settings.pause+'"><span class="mut">Min.</span></div>'+
+      '</div>';
+  });
+  document.getElementById('days').innerHTML=h;
+  document.querySelectorAll('#days input').forEach(function(inp){
+    inp.onchange=function(){
+      var k=inp.closest('.day').getAttribute('data-k'),f=inp.getAttribute('data-f').split('.'),d=getDay(k);
+      if(f.length===2){if(!d[f[0]])d[f[0]]={};d[f[0]][f[1]]=inp.value}else{d.pause=inp.value===''?null:+inp.value}
+      save();render();
+    };
+  });
+  var max=+store.settings.max||35;
+  document.getElementById('sumTxt').innerHTML='<b>'+hm(tot)+' h</b> von max. '+max+' h';
+  var rest=max*60-tot;
+  var rt=document.getElementById('restTxt');
+  rt.textContent=rest>=0?'noch '+hm(rest)+' frei':'Limit um '+hm(-rest)+' überschritten';
+  rt.className=rest>=0?'mut':'mut warn';
+  document.getElementById('barFill').style.width=Math.min(100,tot/(max*60)*100)+'%';
+  return {ds:ds,tot:tot};
+}
+
+function buildMail(info){
+  var ds=info.ds,kw=isoWeek(ds[0]),s=store.settings,L=[];
+  var subj='Arbeitszeiten KW '+kw+' ('+ddmm(ds[0])+'–'+ddmm(ds[4])+ds[4].getFullYear()+')';
+  ds.forEach(function(dt){
+    var d=store.days[iso(dt)]||{},cl=calc(d),line=WD[dt.getDay()]+' '+ddmm(dt)+' ';
+    if(!cl){L.push(line+'– keine Zeiten erfasst');return}
+    line+=hm(cl.s).replace(/^(\d):/,'0$1:')+'–'+hm(cl.e)+', Pause '+cl.pause+' Min. = '+hm(cl.net)+' h';
+    L.push(line);
+    [['a',s.nameA],['b',s.nameB]].forEach(function(x){var t=d[x[0]];if(t&&t.start&&t.end)L.push('   '+x[1]+': '+t.start+'–'+t.end)});
+  });
+  L.push('','Summe: '+hm(info.tot)+' h');
+  var tpl=(s.tpl&&s.tpl.trim())?s.tpl:DEFAULT_TPL,blk=L.join('\n');
+  var body=tpl.indexOf('{ZEITEN}')>=0?tpl.split('{ZEITEN}').join(blk):tpl+'\n\n'+blk;
+  body=body.split('{KW}').join(String(kw));
+  return {subj:subj,body:body};
+}
+
+var mailDirty=false;
+function updateLink(){
+  var v=document.getElementById('mailTxt').value,subj='',body=v;
+  var m=v.match(/^Betreff:[ \t]*([^\n]*)\n?/);
+  if(m){subj=m[1];body=v.slice(m[0].length).replace(/^\s*\n/,'')}
+  var to=store.settings.mail||'';
+  document.getElementById('mailLink').href='mailto:'+encodeURIComponent(to).replace('%40','@')+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body);
+  document.getElementById('mailHint').textContent=(to?('Empfängerin: '+to):'Noch keine Empfängeradresse hinterlegt (Einstellungen).')+(mailDirty?' · Text manuell bearbeitet, Zeitänderungen werden erst mit „Neu generieren“ übernommen.':'');
+}
+function renderMail(info){
+  lastInfo=info;
+  if(!mailDirty){var m=buildMail(info);document.getElementById('mailTxt').value='Betreff: '+m.subj+'\n\n'+m.body}
+  updateLink();
+}
+var lastInfo=null;
+
+function render(){renderStamp();var i=renderWeek();renderMail(i)}
+
+document.getElementById('mailTxt').addEventListener('input',function(){mailDirty=true;updateLink()});
+document.getElementById('regenBtn').onclick=function(){mailDirty=false;render();toast('Text neu erzeugt')};
+document.getElementById('prev').onclick=function(){weekOffset--;mailDirty=false;render()};
+document.getElementById('next').onclick=function(){weekOffset++;mailDirty=false;render()};
+document.getElementById('copyBtn').onclick=function(){
+  var t=document.getElementById('mailTxt');
+  try{navigator.clipboard.writeText(t.value).then(function(){toast('Kopiert')},function(){t.select();toast('Bitte manuell kopieren')})}catch(e){t.select();toast('Bitte manuell kopieren')}
+};
+
+var map={sNameA:'nameA',sNameB:'nameB',sMail:'mail',sTpl:'tpl',sPause:'pause',sMax:'max'};
+document.getElementById('tplReset').onclick=function(){store.settings.tpl=DEFAULT_TPL;document.getElementById('sTpl').value=DEFAULT_TPL;mailDirty=false;save();render();toast('Vorlage zurückgesetzt')};
+Object.keys(map).forEach(function(id){
+  var el=document.getElementById(id);el.value=store.settings[map[id]];
+  el.onchange=function(){var v=el.value;if(id==='sPause'||id==='sMax')v=+v;if(id==='sTpl')mailDirty=false;store.settings[map[id]]=v;save();render()};
+});
+
+function fmtDT(t){var d=new Date(t);return d.toLocaleDateString('de-DE')+' '+p2(d.getHours())+':'+p2(d.getMinutes())}
+function hint(){var h=document.getElementById('bakHint');h.textContent=store.lastBackup?'Letzte Sicherung: '+fmtDT(store.lastBackup):'Noch nie gesichert.'}
+document.getElementById('expBtn').onclick=function(){
+  try{
+    store.lastBackup=Date.now();save();
+    var blob=new Blob([JSON.stringify({app:'zeiterfassung',v:1,settings:store.settings,days:store.days})],{type:'application/json'});
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='zeiterfassung-'+iso(new Date())+'.json';
+    document.body.appendChild(a);a.click();a.remove();hint();toast('Sicherung gespeichert');
+  }catch(e){toast('Speichern hat nicht geklappt')}
+};
+document.getElementById('impBtn').onclick=function(){document.getElementById('impFile').click()};
+document.getElementById('impFile').onchange=function(ev){
+  var f=ev.target.files[0];if(!f)return;
+  var r=new FileReader();
+  r.onload=function(){
+    try{
+      var o=JSON.parse(r.result);if(o.app!=='zeiterfassung')throw 0;
+      store.settings=Object.assign(store.settings,o.settings||{});store.days=o.days||{};save();
+      Object.keys(map).forEach(function(id){document.getElementById(id).value=store.settings[map[id]]});
+      mailDirty=false;render();toast('Sicherung geladen');
+    }catch(e){toast('Das ist keine gültige Sicherung')}
+  };
+  r.readAsText(f);ev.target.value='';
+};
+hint();
+
+function checkHash(){
+  try{var q=new URLSearchParams(location.search).get('stempel');
+    if(q==='1'||q==='2'){stamp(q==='1'?'a':'b',true);history.replaceState(null,'',location.pathname);return}}catch(e){}
+  var h=location.hash;
+  if(h==='#stempel-1'||h==='#stempel-2'){
+    stamp(h==='#stempel-1'?'a':'b',true);
+    try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}
+  }
+}
+window.addEventListener('hashchange',checkHash);
+render();checkHash();
+try{if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js')}catch(e){}
+})();
+</script>
+</body>
+</html>
