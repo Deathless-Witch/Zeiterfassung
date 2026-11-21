@@ -24,6 +24,7 @@ button.pri{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:60
 button:disabled{opacity:.5;cursor:default}
 .big{width:100%;padding:16px;font-size:18px}
 input{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:6px 8px;min-width:0}
+select{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:6px 6px;min-width:0;width:100%}
 input[type=time]{width:104px}
 input[type=number]{width:70px}
 input[type=text],input[type=email]{width:100%}
@@ -133,8 +134,9 @@ function weekDates(){var m=mondayOf(new Date());m.setDate(m.getDate()+weekOffset
 // Tag berechnen: Tag beginnt beim frühesten Start, endet beim spätesten Ende, dazwischen laufen beide parallel.
 function calc(day){
   if(!day)return null;
+  if(day.me==='krank'||day.me==='au')return null;
   var st=[],en=[];
-  ['a','b'].forEach(function(c){var x=day[c];if(x){if(toMin(x.start)!=null)st.push(toMin(x.start));if(toMin(x.end)!=null)en.push(toMin(x.end))}});
+  ['a','b'].forEach(function(c){var x=day[c];if(x&&!x.st){if(toMin(x.start)!=null)st.push(toMin(x.start));if(toMin(x.end)!=null)en.push(toMin(x.end))}});
   if(!st.length||!en.length)return null;
   var s=Math.min.apply(null,st),e=Math.max.apply(null,en);
   if(e<=s)return null;
@@ -142,6 +144,16 @@ function calc(day){
   return {s:s,e:e,pause:pause,net:Math.max(0,e-s-pause)};
 }
 
+function isSick(k){var d=store.days[k];return !!d&&(d.me==='krank'||d.me==='au')}
+function sickRun(dt){
+  var n=0,x=new Date(dt.getFullYear(),dt.getMonth(),dt.getDate());
+  for(var i=0;i<30;i++){
+    var wd=x.getDay();
+    if(wd!==0&&wd!==6){if(isSick(iso(x)))n++;else break}
+    x.setDate(x.getDate()-1);
+  }
+  return n;
+}
 function toast(t){var el=document.getElementById('toast');el.textContent=t;el.className='toast on';clearTimeout(toast.t);toast.t=setTimeout(function(){el.className='toast'},2600)}
 
 function getDay(k){if(!store.days[k])store.days[k]={};return store.days[k]}
@@ -179,9 +191,14 @@ function renderWeek(){
   document.getElementById('weekLabel').textContent='KW '+isoWeek(ds[0])+' · '+ddmm(ds[0])+'–'+ddmm(ds[4])+ds[4].getFullYear();
   ds.forEach(function(dt){
     var k=iso(dt),d=store.days[k]||{},cl=calc(d);if(cl)tot+=cl.net;
-    var a=d.a||{},b=d.b||{};
+    var a=d.a||{},b=d.b||{},me=d.me||'';
+    var run=(me==='krank')?sickRun(dt):0;
+    function opts(cur,name){return '<option value=""'+(cur?'':' selected')+'>'+esc(name)+': da</option><option value="abw"'+(cur==='abw'?' selected':'')+'>'+esc(name)+': abwesend</option><option value="krank"'+(cur==='krank'?' selected':'')+'>'+esc(name)+': krank</option>'}
     h+='<div class="card day'+(k===todayK?' today':'')+'" data-k="'+k+'">'+
-      '<div class="dh">'+WD[dt.getDay()]+' '+ddmm(dt)+'</div><div class="net">'+(cl?hm(cl.net)+' h':'–')+'</div>'+
+      '<div class="dh">'+WD[dt.getDay()]+' '+ddmm(dt)+'</div><div class="net">'+(me==='krank'?'krank':me==='au'?'AU':cl?hm(cl.net)+' h':'–')+'</div>'+
+      '<div class="cl"><span class="mut">Ich</span><select data-f="me" style="grid-column:2/4"><option value=""'+(me?'':' selected')+'>arbeite normal</option><option value="krank"'+(me==='krank'?' selected':'')+'>krank (ohne AU)</option><option value="au"'+(me==='au'?' selected':'')+'>AU (krankgeschrieben)</option></select></div>'+
+      (run>=3?'<div class="mut warn" style="grid-column:1/-1">'+run+'. Krankheitstag in Folge – ab hier AU nötig.</div>':'')+
+      '<div class="cl"><span class="mut">Status</span><select data-f="a.st">'+opts(a.st||'',store.settings.nameA)+'</select><select data-f="b.st">'+opts(b.st||'',store.settings.nameB)+'</select></div>'+
       '<div class="cl"><span class="mut">'+esc(store.settings.nameA)+'</span><input type="time" data-f="a.start" value="'+(a.start||'')+'"><input type="time" data-f="a.end" value="'+(a.end||'')+'"></div>'+
       '<div class="cl"><span class="mut">'+esc(store.settings.nameB)+'</span><input type="time" data-f="b.start" value="'+(b.start||'')+'"><input type="time" data-f="b.end" value="'+(b.end||'')+'"></div>'+
       '<div class="cl"><span class="mut">Pause</span><input type="number" min="0" step="5" data-f="pause" value="'+((d.pause!=null&&d.pause!=='')?d.pause:'')+'" placeholder="'+store.settings.pause+'"><span class="mut">Min.</span></div>'+
@@ -190,10 +207,10 @@ function renderWeek(){
       '</div>';
   });
   document.getElementById('days').innerHTML=h;
-  document.querySelectorAll('#days input').forEach(function(inp){
+  document.querySelectorAll('#days input, #days select').forEach(function(inp){
     inp.onchange=function(){
       var k=inp.closest('.day').getAttribute('data-k'),f=inp.getAttribute('data-f').split('.'),d=getDay(k);
-      if(f.length===2){if(!d[f[0]])d[f[0]]={};d[f[0]][f[1]]=inp.value}else if(f[0]==='note'){d.note=inp.value}else if(f[0]==='noteSend'){d.noteSend=inp.checked}else{d.pause=inp.value===''?null:+inp.value}
+      if(f.length===2){if(!d[f[0]])d[f[0]]={};d[f[0]][f[1]]=inp.value}else if(f[0]==='me'){d.me=inp.value}else if(f[0]==='note'){d.note=inp.value}else if(f[0]==='noteSend'){d.noteSend=inp.checked}else{d.pause=inp.value===''?null:+inp.value}
       save();render();
     };
   });
@@ -211,11 +228,16 @@ function buildMail(info){
   var ds=info.ds,kw=isoWeek(ds[0]),s=store.settings,L=[];
   var subj='Arbeitszeiten KW '+kw+' ('+ddmm(ds[0])+'–'+ddmm(ds[4])+ds[4].getFullYear()+')';
   ds.forEach(function(dt){
-    var d=store.days[iso(dt)]||{},cl=calc(d),line=WD[dt.getDay()]+' '+ddmm(dt)+' ';
-    if(!cl){L.push(line+'– keine Zeiten erfasst');if(d.note&&d.noteSend!==false)L.push('  · Notiz: '+d.note);L.push('');return}
-    line+=hm(cl.s).replace(/^(\d):/,'0$1:')+'–'+hm(cl.e)+', Pause '+cl.pause+' Min. = '+hm(cl.net)+' h';
-    L.push(line);
-    [['a',s.nameA],['b',s.nameB]].forEach(function(x){var t=d[x[0]];if(t&&t.start&&t.end)L.push('  · '+x[1]+': '+t.start+'–'+t.end)});
+    var d=store.days[iso(dt)]||{},cl=calc(d),me=d.me,line=WD[dt.getDay()]+' '+ddmm(dt)+' ';
+    var sick=(me==='krank'||me==='au');
+    if(sick)L.push(line+'– '+(me==='au'?'AU (arbeitsunfähig)':'krank'));
+    else if(!cl)L.push(line+'– keine Zeiten erfasst');
+    else L.push(line+hm(cl.s).replace(/^(\d):/,'0$1:')+'–'+hm(cl.e)+', Pause '+cl.pause+' Min. = '+hm(cl.net)+' h');
+    if(!sick)[['a',s.nameA],['b',s.nameB]].forEach(function(x){
+      var t=d[x[0]]||{};
+      if(t.st)L.push('  · '+x[1]+': '+(t.st==='abw'?'abwesend':'krank'));
+      else if(cl&&t.start&&t.end)L.push('  · '+x[1]+': '+t.start+'–'+t.end);
+    });
     if(d.note&&d.noteSend!==false)L.push('  · Notiz: '+d.note);
     L.push('');
   });
