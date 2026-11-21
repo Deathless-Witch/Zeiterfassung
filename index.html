@@ -185,13 +185,15 @@ function renderWeek(){
       '<div class="cl"><span class="mut">'+esc(store.settings.nameA)+'</span><input type="time" data-f="a.start" value="'+(a.start||'')+'"><input type="time" data-f="a.end" value="'+(a.end||'')+'"></div>'+
       '<div class="cl"><span class="mut">'+esc(store.settings.nameB)+'</span><input type="time" data-f="b.start" value="'+(b.start||'')+'"><input type="time" data-f="b.end" value="'+(b.end||'')+'"></div>'+
       '<div class="cl"><span class="mut">Pause</span><input type="number" min="0" step="5" data-f="pause" value="'+((d.pause!=null&&d.pause!=='')?d.pause:'')+'" placeholder="'+store.settings.pause+'"><span class="mut">Min.</span></div>'+
+      '<div class="cl"><span class="mut">Notiz</span><input type="text" data-f="note" value="'+esc(d.note||'')+'" placeholder="z. B. Arzttermin" style="grid-column:2/4"></div>'+
+      '<div class="cl"><span></span><label style="display:flex;gap:6px;align-items:center;margin:0;grid-column:2/4"><input type="checkbox" data-f="noteSend" '+(d.noteSend===false?'':'checked')+'> in Meldung mitsenden</label></div>'+
       '</div>';
   });
   document.getElementById('days').innerHTML=h;
   document.querySelectorAll('#days input').forEach(function(inp){
     inp.onchange=function(){
       var k=inp.closest('.day').getAttribute('data-k'),f=inp.getAttribute('data-f').split('.'),d=getDay(k);
-      if(f.length===2){if(!d[f[0]])d[f[0]]={};d[f[0]][f[1]]=inp.value}else{d.pause=inp.value===''?null:+inp.value}
+      if(f.length===2){if(!d[f[0]])d[f[0]]={};d[f[0]][f[1]]=inp.value}else if(f[0]==='note'){d.note=inp.value}else if(f[0]==='noteSend'){d.noteSend=inp.checked}else{d.pause=inp.value===''?null:+inp.value}
       save();render();
     };
   });
@@ -210,10 +212,11 @@ function buildMail(info){
   var subj='Arbeitszeiten KW '+kw+' ('+ddmm(ds[0])+'–'+ddmm(ds[4])+ds[4].getFullYear()+')';
   ds.forEach(function(dt){
     var d=store.days[iso(dt)]||{},cl=calc(d),line=WD[dt.getDay()]+' '+ddmm(dt)+' ';
-    if(!cl){L.push(line+'– keine Zeiten erfasst','');return}
+    if(!cl){L.push(line+'– keine Zeiten erfasst');if(d.note&&d.noteSend!==false)L.push('  · Notiz: '+d.note);L.push('');return}
     line+=hm(cl.s).replace(/^(\d):/,'0$1:')+'–'+hm(cl.e)+', Pause '+cl.pause+' Min. = '+hm(cl.net)+' h';
     L.push(line);
     [['a',s.nameA],['b',s.nameB]].forEach(function(x){var t=d[x[0]];if(t&&t.start&&t.end)L.push('  · '+x[1]+': '+t.start+'–'+t.end)});
+    if(d.note&&d.noteSend!==false)L.push('  · Notiz: '+d.note);
     L.push('');
   });
   L.push('Summe: '+hm(info.tot)+' h');
