@@ -209,12 +209,13 @@ function buildMail(info){
   var subj='Arbeitszeiten KW '+kw+' ('+ddmm(ds[0])+'–'+ddmm(ds[4])+ds[4].getFullYear()+')';
   ds.forEach(function(dt){
     var d=store.days[iso(dt)]||{},cl=calc(d),line=WD[dt.getDay()]+' '+ddmm(dt)+' ';
-    if(!cl){L.push(line+'– keine Zeiten erfasst');return}
+    if(!cl){L.push(line+'– keine Zeiten erfasst','');return}
     line+=hm(cl.s).replace(/^(\d):/,'0$1:')+'–'+hm(cl.e)+', Pause '+cl.pause+' Min. = '+hm(cl.net)+' h';
     L.push(line);
     [['a',s.nameA],['b',s.nameB]].forEach(function(x){var t=d[x[0]];if(t&&t.start&&t.end)L.push('  · '+x[1]+': '+t.start+'–'+t.end)});
+    L.push('');
   });
-  L.push('','Summe: '+hm(info.tot)+' h');
+  L.push('Summe: '+hm(info.tot)+' h');
   var tpl=(s.tpl&&s.tpl.trim())?s.tpl:DEFAULT_TPL,blk=L.join('\n');
   var body=tpl.indexOf('{ZEITEN}')>=0?tpl.split('{ZEITEN}').join(blk):tpl+'\n\n'+blk;
   body=body.split('{KW}').join(String(kw));
@@ -227,7 +228,7 @@ function updateLink(){
   var m=v.match(/^Betreff:[ \t]*([^\n]*)\n?/);
   if(m){subj=m[1];body=v.slice(m[0].length).replace(/^\s*\n/,'')}
   var to=store.settings.mail||'';
-  document.getElementById('mailLink').href='mailto:'+encodeURIComponent(to).replace('%40','@')+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body.replace(/\r?\n/g,'\r\n'));
+  document.getElementById('mailLink').href='mailto:'+encodeURIComponent(to).replace('%40','@')+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body.split(/\r?\n/).map(function(l){return l===''?'\u00A0':l}).join('\r\n'));
   document.getElementById('mailHint').textContent=(to?('Empfängerin: '+to):'Noch keine Empfängeradresse hinterlegt (Einstellungen).')+(mailDirty?' · Text manuell bearbeitet, Zeitänderungen werden erst mit „Neu generieren“ übernommen.':'');
 }
 function renderMail(info){
