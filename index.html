@@ -67,9 +67,10 @@ a.btn{display:inline-block;text-decoration:none;border:1px solid var(--ln);borde
   <div class="mut" style="margin-bottom:8px">Fertiger Text für die angezeigte Woche. Du kannst ihn direkt bearbeiten; Kopieren und Mail-Link nehmen deinen Text.</div>
   <textarea id="mailTxt"></textarea>
   <div class="row" style="margin-top:8px">
-    <button class="pri" id="copyBtn">Text kopieren</button>
+    <button class="pri" id="copyOpenBtn">Kopieren &amp; Mail öffnen</button>
+    <button id="copyBtn">Nur kopieren</button>
     <button id="regenBtn">Neu generieren</button>
-    <a class="btn" id="mailLink" href="#">In Mail-App öffnen</a>
+    <a class="btn" id="mailLink" href="#">Mail mit Text (Formatierung kann verloren gehen)</a>
   </div>
   <div class="mut" id="mailHint" style="margin-top:8px"></div>
 </div>
@@ -222,12 +223,13 @@ function buildMail(info){
   return {subj:subj,body:body};
 }
 
-var mailDirty=false;
+var mailDirty=false,mailShort='';
 function updateLink(){
   var v=document.getElementById('mailTxt').value,subj='',body=v;
   var m=v.match(/^Betreff:[ \t]*([^\n]*)\n?/);
   if(m){subj=m[1];body=v.slice(m[0].length).replace(/^\s*\n/,'')}
   var to=store.settings.mail||'';
+  mailShort='mailto:'+encodeURIComponent(to).replace('%40','@')+'?subject='+encodeURIComponent(subj);
   document.getElementById('mailLink').href='mailto:'+encodeURIComponent(to).replace('%40','@')+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body.split(/\r?\n/).map(function(l){return l===''?'\u00A0':l}).join('\r\n'));
   document.getElementById('mailHint').textContent=(to?('Empfängerin: '+to):'Noch keine Empfängeradresse hinterlegt (Einstellungen).')+(mailDirty?' · Text manuell bearbeitet, Zeitänderungen werden erst mit „Neu generieren“ übernommen.':'');
 }
@@ -244,6 +246,11 @@ document.getElementById('mailTxt').addEventListener('input',function(){mailDirty
 document.getElementById('regenBtn').onclick=function(){mailDirty=false;render();toast('Text neu erzeugt')};
 document.getElementById('prev').onclick=function(){weekOffset--;mailDirty=false;render()};
 document.getElementById('next').onclick=function(){weekOffset++;mailDirty=false;render()};
+document.getElementById('copyOpenBtn').onclick=function(){
+  var t=document.getElementById('mailTxt');
+  function openMail(){var a=document.createElement('a');a.href=mailShort;document.body.appendChild(a);a.click();a.remove()}
+  try{navigator.clipboard.writeText(t.value).then(function(){toast('Kopiert – in der Mail einfügen');setTimeout(openMail,500)},function(){t.select();toast('Kopieren ging nicht, bitte manuell kopieren')})}catch(e){t.select();toast('Kopieren ging nicht, bitte manuell kopieren')}
+};
 document.getElementById('copyBtn').onclick=function(){
   var t=document.getElementById('mailTxt');
   try{navigator.clipboard.writeText(t.value).then(function(){toast('Kopiert')},function(){t.select();toast('Bitte manuell kopieren')})}catch(e){t.select();toast('Bitte manuell kopieren')}
