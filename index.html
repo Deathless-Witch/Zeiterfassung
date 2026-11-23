@@ -78,9 +78,10 @@ a.btn{display:inline-block;text-decoration:none;border:1px solid var(--ln);borde
 
 <h2>Sicherung</h2>
 <div class="card">
-  <div class="mut" style="margin-bottom:8px">Alle Zeiten und Einstellungen liegen nur in diesem Browser. Zieh dir ab und zu eine Sicherung.</div>
+  <div class="mut" style="margin-bottom:8px">Alle Zeiten und Einstellungen liegen nur auf diesem Handy. „Senden / teilen“ öffnet das Android-Teilen-Menü: Schick die Sicherung an dich selbst (Mail) oder in dein Drive. Die Datei ist nicht zum Lesen gedacht, nur zum Wiederherstellen über „Sicherung laden“.</div>
   <div class="row">
-    <button class="pri" id="expBtn">Sicherung speichern</button>
+    <button class="pri" id="shareBtn">Sicherung senden / teilen</button>
+    <button id="expBtn">Als Datei speichern</button>
     <button id="impBtn">Sicherung laden</button>
     <input type="file" id="impFile" accept=".json,application/json" style="display:none">
   </div>
@@ -307,13 +308,24 @@ Object.keys(map).forEach(function(id){
 
 function fmtDT(t){var d=new Date(t);return d.toLocaleDateString('de-DE')+' '+p2(d.getHours())+':'+p2(d.getMinutes())}
 function hint(){var h=document.getElementById('bakHint');h.textContent=store.lastBackup?'Letzte Sicherung: '+fmtDT(store.lastBackup):'Noch nie gesichert.'}
-document.getElementById('expBtn').onclick=function(){
+function backupName(){return 'zeiterfassung-'+iso(new Date())+'.json'}
+function backupBlob(){return new Blob([JSON.stringify({app:'zeiterfassung',v:1,settings:store.settings,days:store.days})],{type:'application/json'})}
+function downloadBackup(){
+  var a=document.createElement('a');a.href=URL.createObjectURL(backupBlob());a.download=backupName();
+  document.body.appendChild(a);a.click();a.remove();
+  store.lastBackup=Date.now();save();hint();
+  toast('Gespeichert im Ordner „Downloads“: '+backupName());
+}
+document.getElementById('expBtn').onclick=function(){try{downloadBackup()}catch(e){toast('Speichern hat nicht geklappt')}};
+document.getElementById('shareBtn').onclick=function(){
   try{
-    store.lastBackup=Date.now();save();
-    var blob=new Blob([JSON.stringify({app:'zeiterfassung',v:1,settings:store.settings,days:store.days})],{type:'application/json'});
-    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='zeiterfassung-'+iso(new Date())+'.json';
-    document.body.appendChild(a);a.click();a.remove();hint();toast('Sicherung gespeichert');
-  }catch(e){toast('Speichern hat nicht geklappt')}
+    var f=new File([backupBlob()],backupName(),{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[f]})){
+      navigator.share({files:[f],title:'Zeiterfassung Sicherung '+iso(new Date())}).then(function(){
+        store.lastBackup=Date.now();save();hint();toast('Sicherung geteilt');
+      },function(e){if(e&&e.name!=='AbortError'){try{downloadBackup()}catch(x){toast('Teilen hat nicht geklappt')}}});
+    }else{downloadBackup()}
+  }catch(e){try{downloadBackup()}catch(x){toast('Teilen hat nicht geklappt')}}
 };
 document.getElementById('impBtn').onclick=function(){document.getElementById('impFile').click()};
 document.getElementById('impFile').onchange=function(ev){
@@ -343,6 +355,7 @@ function checkHash(){
 }
 window.addEventListener('hashchange',checkHash);
 render();checkHash();
+try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist()}catch(e){}
 try{if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js')}catch(e){}
 })();
 </script>
