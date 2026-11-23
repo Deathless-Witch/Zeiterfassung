@@ -65,7 +65,7 @@ a.btn{display:inline-block;text-decoration:none;border:1px solid var(--ln);borde
 
 <h2>Wochenmeldung</h2>
 <div class="card">
-  <div class="mut" style="margin-bottom:8px">Fertiger Text für die angezeigte Woche. Du kannst ihn direkt bearbeiten; Kopieren und Mail-Link nehmen deinen Text.</div>
+  <div class="mut" style="margin-bottom:8px">E-Mail Vorschau</div>
   <textarea id="mailTxt"></textarea>
   <div class="row" style="margin-top:8px">
     <button class="pri" id="copyOpenBtn">Kopieren &amp; Mail öffnen</button>
@@ -83,15 +83,15 @@ a.btn{display:inline-block;text-decoration:none;border:1px solid var(--ln);borde
     <div class="grow"><label>Klient 2</label><input type="text" id="sNameB"></div>
   </div>
   <div class="row" style="margin-top:10px">
-    <div class="grow"><label>E-Mail der Vorgesetzten</label><input type="email" id="sMail"></div>
+    <div class="grow"><label>E-Mail</label><input type="email" id="sMail"></div>
   </div>
   <div class="row" style="margin-top:10px">
     <div><label>Pause (Min.)</label><input type="number" id="sPause" min="0" step="5"></div>
     <div><label>Max. Std./Woche</label><input type="number" id="sMax" min="0" step="0.5"></div>
   </div>
-  <div style="margin-top:10px"><label>Mailvorlage ({ZEITEN} = hier kommen die Zeiten rein, {KW} = Kalenderwoche)</label><textarea id="sTpl" style="min-height:190px"></textarea>
+  <div style="margin-top:10px"><label>Mailvorlage</label><textarea id="sTpl" style="min-height:190px"></textarea>
     <button id="tplReset" style="margin-top:6px">Vorlage zurücksetzen</button></div>
-  <div class="mut" style="margin-top:10px">NFC-Sticker beschreiben mit: Adresse dieser Seite + <b>?stempel=1</b> (Klient 1) bzw. <b>?stempel=2</b> (Klient 2).</div>
+  <div class="mut" style="margin-top:10px">NFC-Sticker <b>?stempel=1 (Klient 1)</b> <b>?stempel=2 (Klient 2)</b>.</div>
 </div>
 </main>
 <div class="toast" id="toast"></div>
