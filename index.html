@@ -201,7 +201,7 @@ function renderWeek(){
     function opts(cur,name){return '<option value=""'+(cur?'':' selected')+'>'+esc(name)+': da</option><option value="abw"'+(cur==='abw'?' selected':'')+'>'+esc(name)+': abwesend</option><option value="krank"'+(cur==='krank'?' selected':'')+'>'+esc(name)+': krank</option>'}
     h+='<div class="card day'+(k===todayK?' today':'')+'" data-k="'+k+'">'+
       '<div class="dh">'+WD[dt.getDay()]+' '+ddmm(dt)+'</div><div class="net">'+(me==='krank'?'krank':me==='au'?'AU':cl?hm(cl.net)+' h':'–')+'</div>'+
-      '<div class="cl"><span class="mut">Ich</span><select data-f="me" style="grid-column:2/4"><option value=""'+(me?'':' selected')+'>arbeite normal</option><option value="krank"'+(me==='krank'?' selected':'')+'>krank (ohne AU)</option><option value="au"'+(me==='au'?' selected':'')+'>AU (krankgeschrieben)</option></select></div>'+
+      '<div class="cl"><span class="mut">Ich</span><select data-f="me" style="grid-column:2/4"><option value=""'+(me?'':' selected')+'>da</option><option value="krank"'+(me==='krank'?' selected':'')+'>krank</option><option value="au"'+(me==='au'?' selected':'')+'>AU</option></select></div>'+
       (d.pauseStart&&k!==todayK?'<div class="mut warn" style="grid-column:1/-1">Pause seit '+d.pauseStart+' nicht beendet – Pausenzeit unten prüfen.</div>':'')+
       (run>=3?'<div class="mut warn" style="grid-column:1/-1">'+run+'. Krankheitstag in Folge – ab hier AU nötig.</div>':'')+
       '<div class="cl"><span class="mut">Status</span><select data-f="a.st">'+opts(a.st||'',store.settings.nameA)+'</select><select data-f="b.st">'+opts(b.st||'',store.settings.nameB)+'</select></div>'+
