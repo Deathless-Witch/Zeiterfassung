@@ -74,7 +74,7 @@ a.btn{display:inline-block;text-decoration:none;border:1px solid var(--ln);borde
     <button class="pri" id="copyOpenBtn">Kopieren &amp; Mail öffnen</button>
     <button id="regenBtn">Neu generieren</button>
   </div>
-  <div class="mut" id="mailHint" style="margin-top:8px"></div>
+  <div class="mut" id="mailHint"></div>
 </div>
 
 <h2>Einstellungen</h2>
@@ -262,7 +262,7 @@ function updateLink(){
   var to=store.settings.mail||'';
   mailShort='mailto:'+encodeURIComponent(to).replace('%40','@')+'?subject='+encodeURIComponent(subj);
   document.getElementById('mailLink').href='mailto:'+encodeURIComponent(to).replace('%40','@')+'?subject='+encodeURIComponent(subj)+'&body='+encodeURIComponent(body.split(/\r?\n/).map(function(l){return l===''?'\u00A0':l}).join('\r\n'));
-  document.getElementById('mailHint').textContent=(to?('Empfängerin: '+to):'Noch keine Empfängeradresse hinterlegt (Einstellungen).')+(mailDirty?' · Text manuell bearbeitet, Zeitänderungen werden erst mit „Neu generieren“ übernommen.':'');
+  document.getElementById('mailHint').textContent=mailDirty?'Text manuell bearbeitet, Zeitänderungen werden erst mit „Neu generieren“ übernommen.':'';
 }
 function renderMail(info){
   lastInfo=info;
