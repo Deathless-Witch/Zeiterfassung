@@ -170,6 +170,18 @@ function stamp(c,fromNfc){
   store.last[c]=now;save();render();
 }
 
+function pauseToggle(fromNfc){
+  var now=Date.now();
+  if(fromNfc&&store.last.p&&now-store.last.p<20000){toast('Gerade erst gedrückt – ignoriert.');return}
+  var k=iso(new Date()),d=getDay(k);
+  if(!d.pauseStart){d.pauseStart=nowHM();toast('Pause gestartet '+d.pauseStart)}
+  else{
+    var m=toMin(nowHM())-toMin(d.pauseStart);if(m<0)m=0;
+    d.pauseAcc=(+d.pauseAcc||0)+m;d.pause=d.pauseAcc;d.pauseStart=null;
+    toast('Pause beendet: '+m+' Min. (heute gesamt '+d.pauseAcc+' Min.)');
+  }
+  store.last.p=now;save();render();
+}
 function renderStamp(){
   var k=iso(new Date()),d=store.days[k]||{},h='';
   [['a',store.settings.nameA],['b',store.settings.nameB]].forEach(function(x){
@@ -180,9 +192,13 @@ function renderStamp(){
     h+='<div class="card"><div class="row"><div class="grow"><b>'+esc(x[1])+'</b><div class="mut">'+st+'</div></div>'+
        '<button class="pri" data-c="'+c+'" '+(t.end?'disabled':'')+' style="min-width:120px;padding:14px">'+lab+'</button></div></div>';
   });
+  var pst=d.pauseStart?'läuft seit '+d.pauseStart:(d.pauseAcc?'heute bisher '+d.pauseAcc+' Min.':'noch keine Pause gemessen (Standard: '+store.settings.pause+' Min.)');
+  h+='<div class="card"><div class="row"><div class="grow"><b>Pause</b><div class="mut">'+pst+'</div></div>'+
+     '<button id="pauseBtn" style="min-width:120px;padding:14px">'+(d.pauseStart?'Pause beenden':'Pause starten')+'</button></div></div>';
   var cl=calc(d);
   if(cl)h+='<div class="mut">Heute bisher: '+hm(cl.s)+'–'+hm(cl.e)+', netto '+hm(cl.net)+' h</div>';
   document.getElementById('stamp').innerHTML=h;
+  document.getElementById('pauseBtn').onclick=function(){pauseToggle(false)};
   document.querySelectorAll('#stamp button[data-c]').forEach(function(b){b.onclick=function(){stamp(b.getAttribute('data-c'),false)}});
 }
 
@@ -197,6 +213,7 @@ function renderWeek(){
     h+='<div class="card day'+(k===todayK?' today':'')+'" data-k="'+k+'">'+
       '<div class="dh">'+WD[dt.getDay()]+' '+ddmm(dt)+'</div><div class="net">'+(me==='krank'?'krank':me==='au'?'AU':cl?hm(cl.net)+' h':'–')+'</div>'+
       '<div class="cl"><span class="mut">Ich</span><select data-f="me" style="grid-column:2/4"><option value=""'+(me?'':' selected')+'>arbeite normal</option><option value="krank"'+(me==='krank'?' selected':'')+'>krank (ohne AU)</option><option value="au"'+(me==='au'?' selected':'')+'>AU (krankgeschrieben)</option></select></div>'+
+      (d.pauseStart&&k!==todayK?'<div class="mut warn" style="grid-column:1/-1">Pause seit '+d.pauseStart+' nicht beendet – Pausenzeit unten prüfen.</div>':'')+
       (run>=3?'<div class="mut warn" style="grid-column:1/-1">'+run+'. Krankheitstag in Folge – ab hier AU nötig.</div>':'')+
       '<div class="cl"><span class="mut">Status</span><select data-f="a.st">'+opts(a.st||'',store.settings.nameA)+'</select><select data-f="b.st">'+opts(b.st||'',store.settings.nameB)+'</select></div>'+
       '<div class="cl"><span class="mut">'+esc(store.settings.nameA)+'</span><input type="time" data-f="a.start" value="'+(a.start||'')+'"><input type="time" data-f="a.end" value="'+(a.end||'')+'"></div>'+
@@ -210,7 +227,7 @@ function renderWeek(){
   document.querySelectorAll('#days input, #days select').forEach(function(inp){
     inp.onchange=function(){
       var k=inp.closest('.day').getAttribute('data-k'),f=inp.getAttribute('data-f').split('.'),d=getDay(k);
-      if(f.length===2){if(!d[f[0]])d[f[0]]={};d[f[0]][f[1]]=inp.value}else if(f[0]==='me'){d.me=inp.value}else if(f[0]==='note'){d.note=inp.value}else if(f[0]==='noteSend'){d.noteSend=inp.checked}else{d.pause=inp.value===''?null:+inp.value}
+      if(f.length===2){if(!d[f[0]])d[f[0]]={};d[f[0]][f[1]]=inp.value}else if(f[0]==='me'){d.me=inp.value}else if(f[0]==='note'){d.note=inp.value}else if(f[0]==='noteSend'){d.noteSend=inp.checked}else{d.pause=inp.value===''?null:+inp.value;d.pauseAcc=inp.value===''?0:+inp.value;d.pauseStart=null}
       save();render();
     };
   });
@@ -316,7 +333,8 @@ hint();
 
 function checkHash(){
   try{var q=new URLSearchParams(location.search).get('stempel');
-    if(q==='1'||q==='2'){stamp(q==='1'?'a':'b',true);history.replaceState(null,'',location.pathname);return}}catch(e){}
+    if(q==='1'||q==='2'){stamp(q==='1'?'a':'b',true);history.replaceState(null,'',location.pathname);return}
+    if(q==='p'){pauseToggle(true);history.replaceState(null,'',location.pathname);return}}catch(e){}
   var h=location.hash;
   if(h==='#stempel-1'||h==='#stempel-2'){
     stamp(h==='#stempel-1'?'a':'b',true);
