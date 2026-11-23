@@ -65,13 +65,14 @@ a.btn{display:inline-block;text-decoration:none;border:1px solid var(--ln);borde
 
 <h2>Wochenmeldung</h2>
 <div class="card">
-  <div class="mut" style="margin-bottom:8px">Email Vorschau</div>
+  <div class="mut" style="margin-bottom:8px">Fertiger Text für die angezeigte Woche. Du kannst ihn direkt bearbeiten; Kopieren und Mail-Link nehmen deinen Text.</div>
   <textarea id="mailTxt"></textarea>
   <div class="row" style="margin-top:8px">
-      <a class="btn" id="mailLink" href="#">Mail mit Text</a>
     <button class="pri" id="copyOpenBtn">Kopieren &amp; Mail öffnen</button>
     <button id="copyBtn">Nur kopieren</button>
-    </div>
+    <button id="regenBtn">Neu generieren</button>
+    <a class="btn" id="mailLink" href="#">Mail mit Text (Formatierung kann verloren gehen)</a>
+  </div>
   <div class="mut" id="mailHint" style="margin-top:8px"></div>
 </div>
 
