@@ -71,7 +71,7 @@ a.btn{display:inline-block;text-decoration:none;border:1px solid var(--ln);borde
     <button class="pri" id="copyOpenBtn">Kopieren &amp; Mail öffnen</button>
     <button id="copyBtn">Nur kopieren</button>
     <button id="regenBtn">Neu generieren</button>
-    <a class="btn" id="mailLink" href="#">Mail mit Text (Formatierung kann verloren gehen)</a>
+    <a class="btn" id="mailLink" href="#">Mail mit Text</a>
   </div>
   <div class="mut" id="mailHint" style="margin-top:8px"></div>
 </div>
@@ -181,7 +181,7 @@ function renderStamp(){
     h+='<div class="card"><div class="row"><div class="grow"><b>'+esc(x[1])+'</b><div class="mut">'+st+'</div></div>'+
        '<button class="pri" data-c="'+c+'" '+(t.end?'disabled':'')+' style="min-width:120px;padding:14px">'+lab+'</button></div></div>';
   });
-  var pst=d.pauseStart?'läuft seit '+d.pauseStart:(d.pauseAcc?'heute bisher '+d.pauseAcc+' Min.':'noch keine Pause gemessen (Standard: '+store.settings.pause+' Min.)');
+  var pst=d.pauseStart?'läuft seit '+d.pauseStart:(d.pauseAcc?'heute bisher '+d.pauseAcc+' Min.':'Standard: '+store.settings.pause+' Min.');
   h+='<div class="card"><div class="row"><div class="grow"><b>Pause</b><div class="mut">'+pst+'</div></div>'+
      '<button id="pauseBtn" style="min-width:120px;padding:14px">'+(d.pauseStart?'Pause beenden':'Pause starten')+'</button></div></div>';
   var cl=calc(d);
