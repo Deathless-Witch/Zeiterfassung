@@ -41,6 +41,8 @@ label{font-size:13px;color:var(--mut);display:block;margin-bottom:3px}
 textarea{width:100%;min-height:230px;font:13px/1.45 ui-monospace,monospace;color:var(--tx);background:var(--bg);border:1px solid var(--ln);border-radius:8px;padding:8px}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:10px;font-size:15px;max-width:90%;opacity:0;pointer-events:none;transition:opacity .2s}
 .toast.on{opacity:1}
+a.btn.pri{background:var(--ac);color:#fff;border-color:var(--ac);font-weight:600}
+@media(prefers-color-scheme:dark){a.btn.pri{color:#10231d}}
 a.btn{display:inline-block;text-decoration:none;border:1px solid var(--ln);border-radius:10px;padding:10px 14px;color:var(--tx)}
 </style>
 </head>
@@ -68,10 +70,9 @@ a.btn{display:inline-block;text-decoration:none;border:1px solid var(--ln);borde
   <div class="mut" style="margin-bottom:8px">E-Mail Vorschau</div>
   <textarea id="mailTxt"></textarea>
   <div class="row" style="margin-top:8px">
+    <a class="btn pri" id="mailLink" href="#">Mail mit Text</a>
     <button class="pri" id="copyOpenBtn">Kopieren &amp; Mail öffnen</button>
-    <button id="copyBtn">Nur kopieren</button>
     <button id="regenBtn">Neu generieren</button>
-    <a class="btn" id="mailLink" href="#">Mail mit Text</a>
   </div>
   <div class="mut" id="mailHint" style="margin-top:8px"></div>
 </div>
@@ -185,7 +186,6 @@ function renderStamp(){
   h+='<div class="card"><div class="row"><div class="grow"><b>Pause</b><div class="mut">'+pst+'</div></div>'+
      '<button id="pauseBtn" style="min-width:120px;padding:14px">'+(d.pauseStart?'Pause beenden':'Pause starten')+'</button></div></div>';
   var cl=calc(d);
-  if(cl)h+='<div class="mut">Heute bisher: '+hm(cl.s)+'–'+hm(cl.e)+', netto '+hm(cl.net)+' h</div>';
   document.getElementById('stamp').innerHTML=h;
   document.getElementById('pauseBtn').onclick=function(){pauseToggle(false)};
   document.querySelectorAll('#stamp button[data-c]').forEach(function(b){b.onclick=function(){stamp(b.getAttribute('data-c'),false)}});
@@ -281,10 +281,6 @@ document.getElementById('copyOpenBtn').onclick=function(){
   var t=document.getElementById('mailTxt');
   function openMail(){var a=document.createElement('a');a.href=mailShort;document.body.appendChild(a);a.click();a.remove()}
   try{navigator.clipboard.writeText(t.value).then(function(){toast('Kopiert – in der Mail einfügen');setTimeout(openMail,500)},function(){t.select();toast('Kopieren ging nicht, bitte manuell kopieren')})}catch(e){t.select();toast('Kopieren ging nicht, bitte manuell kopieren')}
-};
-document.getElementById('copyBtn').onclick=function(){
-  var t=document.getElementById('mailTxt');
-  try{navigator.clipboard.writeText(t.value).then(function(){toast('Kopiert')},function(){t.select();toast('Bitte manuell kopieren')})}catch(e){t.select();toast('Bitte manuell kopieren')}
 };
 
 var map={sNameA:'nameA',sNameB:'nameB',sMail:'mail',sTpl:'tpl',sPause:'pause',sMax:'max'};
