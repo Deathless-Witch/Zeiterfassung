@@ -255,7 +255,10 @@ function buildMail(info){
     if(d.note&&d.noteSend!==false)L.push('  · Notiz: '+d.note);
     L.push('');
   });
-  L.push('Summe: '+hm(info.tot)+' h');
+  var ma=0,mb=0;ds.forEach(function(dt){var dd=store.days[iso(dt)];ma+=clientMin(dd,'a');mb+=clientMin(dd,'b')});
+  L.push('Summe gesamt: '+hm(info.tot)+' h');
+  L.push('  · '+s.nameA+': '+hm(ma)+' h');
+  L.push('  · '+s.nameB+': '+hm(mb)+' h');
   var tpl=(s.tpl&&s.tpl.trim())?s.tpl:DEFAULT_TPL,blk=L.join('\n');
   var body=tpl.indexOf('{ZEITEN}')>=0?tpl.split('{ZEITEN}').join(blk):tpl+'\n\n'+blk;
   body=body.split('{KW}').join(String(kw));
