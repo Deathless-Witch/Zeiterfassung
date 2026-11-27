@@ -62,6 +62,7 @@ a.btn{display:inline-block;text-decoration:none;border:1px solid var(--ln);borde
 <div class="card">
   <div class="row"><div class="grow" id="sumTxt"></div><div id="restTxt" class="mut"></div></div>
   <div class="bar"><i id="barFill" style="width:0"></i></div>
+  <div class="mut" id="clTxt"></div>
 </div>
 <div id="days"></div>
 
@@ -191,11 +192,17 @@ function renderStamp(){
   document.querySelectorAll('#stamp button[data-c]').forEach(function(b){b.onclick=function(){stamp(b.getAttribute('data-c'),false)}});
 }
 
+function clientMin(d,c){
+  if(!d||d.me==='krank'||d.me==='au')return 0;
+  var x=d[c];if(!x||x.st)return 0;
+  var a=toMin(x.start),b=toMin(x.end);
+  return(a!=null&&b!=null&&b>a)?b-a:0;
+}
 function renderWeek(){
-  var ds=weekDates(),todayK=iso(new Date()),tot=0,h='';
+  var ds=weekDates(),todayK=iso(new Date()),tot=0,h='',ca=0,cb=0;
   document.getElementById('weekLabel').textContent='KW '+isoWeek(ds[0])+' · '+ddmm(ds[0])+'–'+ddmm(ds[4])+ds[4].getFullYear();
   ds.forEach(function(dt){
-    var k=iso(dt),d=store.days[k]||{},cl=calc(d);if(cl)tot+=cl.net;
+    var k=iso(dt),d=store.days[k]||{},cl=calc(d);if(cl)tot+=cl.net;ca+=clientMin(d,'a');cb+=clientMin(d,'b');
     var a=d.a||{},b=d.b||{},me=d.me||'';
     var run=(me==='krank')?sickRun(dt):0;
     function opts(cur,name){return '<option value=""'+(cur?'':' selected')+'>'+esc(name)+': da</option><option value="abw"'+(cur==='abw'?' selected':'')+'>'+esc(name)+': abwesend</option><option value="krank"'+(cur==='krank'?' selected':'')+'>'+esc(name)+': krank</option>'}
@@ -222,6 +229,7 @@ function renderWeek(){
   });
   var max=+store.settings.max||35;
   document.getElementById('sumTxt').innerHTML='<b>'+hm(tot)+' h</b> von max. '+max+' h';
+  document.getElementById('clTxt').innerHTML=esc(store.settings.nameA)+': <b>'+hm(ca)+' h</b> · '+esc(store.settings.nameB)+': <b>'+hm(cb)+' h</b>';
   var rest=max*60-tot;
   var rt=document.getElementById('restTxt');
   rt.textContent=rest>=0?'noch '+hm(rest)+' frei':'Limit um '+hm(-rest)+' überschritten';
